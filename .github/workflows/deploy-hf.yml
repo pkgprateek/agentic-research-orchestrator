@@ -24,7 +24,7 @@ jobs:
         git config --global user.name "github-actions[bot]"
         
         # Add HF remote (create Space first at huggingface.co/spaces)
-        git remote add hf https://prateekkumargoel:$HF_TOKEN@huggingface.co/spaces/prateekkumargoel/agentic-market-research || true
+        git remote add hf https://pkgprateek:$HF_TOKEN@huggingface.co/spaces/pkgprateek/agentic-market-research || true
         
         # Copy HF-specific README
         cp README_HF.md README.md

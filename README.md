@@ -1,6 +1,8 @@
-# Market Intelligence Agent System
+# Agentic Market Research
 
 AI-powered competitive intelligence automation using multi-agent orchestration. Replaces 20 hours of manual research with 15 minutes of automated analysis.
+
+**Live Demo:** [Try it on HuggingFace Spaces](https://huggingface.co/spaces/pkgprateek/agentic-market-research)
 
 ## Problem Statement
 
@@ -222,24 +224,22 @@ Auto-generated documentation available at `/docs` when API is running.
 
 - [Workflow Architecture](docs/WORKFLOW.md) - Technical implementation details
 - [API Reference](http://localhost:8000/docs) - Interactive API documentation
-
 ## Deployment
+
+**Live Demo (Recommended):**
+HuggingFace Spaces with automated GitHub Actions deployment:
+- Live: https://huggingface.co/spaces/pkgprateek/agentic-market-research
+- Auto-deploys on push to main
+- Free tier (2 vCPU, 16GB RAM)
 
 **Local Development:**
 ```bash
 docker-compose up
+# API: http://localhost:8000
+# UI: http://localhost:7860
 ```
 
-**Production Deployment:**
-1. Configure environment variables in `.env`
-2. Build container: `docker build -t agentic-market-research .`
-3. Run: `docker run -p 8000:8000 -p 7860:7860 agentic-market-research`
-
-For production deployments, configure:
-- Persistent volume for checkpoint storage
-- Reverse proxy (nginx) with SSL
-- Resource limits and auto-scaling
-- Monitoring and alerting
+Deployment is automated via GitHub Actions (`.github/workflows/deploy-hf.yml`).
 
 ## Limitations
 
