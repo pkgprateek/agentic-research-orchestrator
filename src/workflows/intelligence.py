@@ -80,8 +80,9 @@ class MarketIntelligenceWorkflow:
         )
 
         # Compile with async SQLite checkpointing
-        with AsyncSqliteSaver.from_conn_string(self.checkpoint_path) as checkpointer:
-            return graph.compile(checkpointer=checkpointer)
+        # AsyncSqliteSaver returns async context manager, store reference
+        checkpointer = AsyncSqliteSaver.from_conn_string(self.checkpoint_path)
+        return graph.compile(checkpointer=checkpointer)
 
     async def _research_node(self, state: IntelligenceState) -> dict:
         """Research agent node."""

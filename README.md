@@ -16,7 +16,7 @@ Automated multi-agent system delivers comprehensive market intelligence in 15 mi
 
 ```mermaid
 graph LR
-    Input[Company Name] --> Research[Research Agent]
+    Input Task --> Research[Research Agent]
     Research --> Analysis[Analysis Agent]
     Analysis --> Writer[Writer Agent]
     Writer --> Report[Intelligence Report]

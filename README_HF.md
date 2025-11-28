@@ -11,31 +11,45 @@ pinned: false
 
 # Agentic Market Research
 
-AI-powered competitive intelligence automation using multi-agent orchestration.
+Multi-agent AI system for automated competitive intelligence. 80x faster than manual research.
 
-**Live Demo:** Use the Gradio interface above to analyze any company or product.
+## What It Does
+
+Enter any company or product name → Get comprehensive market intelligence report in 15 minutes.
+
+**Includes:**
+- Competitor landscape analysis
+- SWOT assessment
+- Market positioning
+- Strategic recommendations
+- Professional citations
 
 ## How It Works
 
-1. Enter company/product name
-2. Choose AI model (free or paid)
-3. Wait 3-5 minutes
-4. Get comprehensive market intelligence report
+Three specialized AI agents work in sequence:
 
-## Features
+1. **Research Agent** - Web search + data gathering
+2. **Analysis Agent** - SWOT + competitive analysis  
+3. **Writer Agent** - Professional report generation
 
-- Multi-agent orchestration (Research → Analysis → Writing)
-- Real-time cost tracking
-- Professional business intelligence reports
-- SWOT analysis and competitive positioning
+Powered by LangGraph orchestration with real-time cost tracking.
+
+## Cost
+
+- Free tier (Grok): $0.00
+- Production (Claude 4.5): $1-2 per analysis
+
+vs $3,000 for manual research.
 
 ## Technology
 
-- LangGraph for agent orchestration
-- OpenRouter for cost-optimized LLM access
+- LangGraph for multi-agent coordination
+- OpenRouter for LLM access (400+ models)
 - Tavily API for web search
-- FastAPI + Gradio for deployment
+- FastAPI + Gradio deployment
+
+**Source code:** [github.com/pkgprateek/agentic-market-research](https://github.com/pkgprateek/agentic-market-research)
 
 ---
 
-Built by Prateek Kumar Goel | [GitHub](https://github.com/pkgprateek/agentic-market-research)
+Built by **Prateek Kumar Goel**
