@@ -8,6 +8,7 @@ venv/
 env/
 ENV/
 .venv
+.ruff_cache/
 
 # Testing
 .pytest_cache/

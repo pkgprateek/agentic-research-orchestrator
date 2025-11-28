@@ -1,258 +1,276 @@
 # Market Intelligence Agent System
 
-Production-grade multi-agent AI system for automated competitive market intelligence using LangGraph and OpenRouter.
+AI-powered competitive intelligence automation using multi-agent orchestration. Replaces 20 hours of manual research with 15 minutes of automated analysis.
 
-## Overview
+## Problem Statement
 
-This system automates competitive market research using a multi-agent architecture. Input a company or product name, and receive comprehensive market intelligence including competitor analysis, SWOT assessment, market positioning, and strategic recommendations.
+Competitive market research is expensive ($3,000) and time-consuming (20 hours) when done manually. Decision-makers need faster, more cost-effective intelligence.
 
-**Key Value Proposition:**
-- Reduces 20 hours of manual research to 15 minutes
-- Costs $0.50-$2 per analysis vs $3,000 for manual research
-- Delivers consistent, professional business intelligence reports
+## Solution
 
-## Features
-
-- **Multi-Agent Orchestration**: Research, Analysis, and Writer agents working in coordination
-- **Production-Ready**: Comprehensive error handling, cost tracking, and observability
-- **Cost-Optimized**: Supports both free tier (Grok, Llama) and production models (Claude 4.5, Gemini 3)
-- **Human-in-the-Loop**: Review and revision workflow before final report
-- **Observability**: LangSmith integration for debugging and performance monitoring
-- **Comprehensive Testing**: 85%+ test coverage with unit, integration, and end-to-end tests
-
-## Technology Stack
-
-- **Framework**: LangGraph 1.0.4 for multi-agent state management
-- **LLM Access**: OpenRouter API (supports 400+ models)
-- **Search**: Tavily API for web search, Wikipedia for factual data
-- **UI**: Gradio for interactive interface
-- **API**: FastAPI for REST endpoints
-- **Observability**: LangSmith for production monitoring
-- **Testing**: pytest with async support
-- **Code Quality**: ruff for linting and formatting
+Multi-agent AI system that automatically:
+- Gathers competitive intelligence via web search
+- Analyzes market positioning with SWOT framework
+- Generates professional business intelligence reports
+- Delivers consistent results in 15 minutes for $0.50-$2
 
 ## Architecture
 
-```
-User Query → Orchestrator → Research Agent → Analysis Agent → Writer Agent → Report
-                                  ↓              ↓              ↓
-                              Tavily API    SWOT Analysis   Markdown Report
-                              Wikipedia     Competitive     Citations
-                                           Matrix          
+```mermaid
+graph TB
+    User[User Input] --> Orchestrator[LangGraph Orchestrator]
+    
+    Orchestrator --> Research[Research Agent]
+    Orchestrator --> Analysis[Analysis Agent]
+    Orchestrator --> Writer[Writer Agent]
+    
+    Research --> Tavily[Tavily Search API]
+    Research --> Wiki[Wikipedia]
+    
+    Analysis --> SWOT[SWOT Analysis]
+    Analysis --> Matrix[Competitive Matrix]
+    Analysis --> Positioning[Market Positioning]
+    
+    Writer --> Summary[Executive Summary]
+    Writer --> Report[Full Report]
+    
+    Report --> Review{Human Review}
+    Review -->|Approve| Export[Export Report]
+    Review -->|Revise| Orchestrator
+    
+    Orchestrator -.-> Checkpoint[(SQLite Checkpoints)]
+    Orchestrator -.-> Cost[Cost Tracker]
+    Orchestrator -.-> Logs[LangSmith Observability]
+    
+    style Orchestrator fill:#4a90e2
+    style Research fill:#7ed321
+    style Analysis fill:#f5a623
+    style Writer fill:#bd10e0
+    style Review fill:#ff6b6b
 ```
 
-The system uses LangGraph's state machine to coordinate agents, with persistent state checkpointing and automatic error recovery.
+### Agent Responsibilities
+
+**Research Agent**: Executes 3 specialized search queries (company overview, competitors, market trends) via Tavily API. Processes and structures raw search results for downstream analysis.
+
+**Analysis Agent**: Performs SWOT analysis, builds competitive positioning matrix, identifies strategic opportunities using LLM reasoning over research data.
+
+**Writer Agent**: Generates executive summary and comprehensive markdown report with proper citations and professional formatting.
+
+**Orchestrator**: Manages agent coordination, state persistence via SQLite checkpoints, error recovery, and cost enforcement.
+
+## Technology Stack
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| Orchestration | LangGraph 1.0.4 | Multi-agent state management |
+| LLM Access | OpenRouter API | Cost-optimized model routing |
+| Search | Tavily API | Web search and data gathering |
+| Observability | LangSmith | Production monitoring and debugging |
+| API | FastAPI | REST endpoints |
+| UI | Gradio | Interactive web interface |
+| Deployment | Docker | Containerized deployment |
+| Testing | pytest | 33 tests (29 unit, 4 integration) |
 
 ## Quick Start
 
 ### Prerequisites
 
 - Python 3.12+
-- OpenRouter API key
-- Tavily API key
-- LangSmith API key (optional, for observability)
+- OpenRouter API key ([sign up](https://openrouter.ai))
+- Tavily API key ([sign up](https://tavily.com))
 
 ### Installation
 
 ```bash
-# Clone repository
-git clone https://github.com/yourusername/agentic-research-orchestrator.git
+git clone https://github.com/pkgprateek/agentic-research-orchestrator.git
 cd agentic-research-orchestrator
 
-# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 
-# Install dependencies (using uv for faster installs)
 pip install uv
 uv pip install -r requirements.txt
 
-# Configure environment
 cp .env.example .env
-# Edit .env and add your API keys
+# Edit .env with your API keys
 ```
 
-### Configuration
+### Usage
 
-Edit `.env` file with your API keys:
-
+**Interactive UI:**
 ```bash
-OPENROUTER_API_KEY=your_openrouter_key_here
-TAVILY_API_KEY=your_tavily_key_here
-LANGSMITH_API_KEY=your_langsmith_key_here  # Optional
-DEFAULT_MODEL=x-ai/grok-4.1-fast:free  # Free for testing
+python src/ui/app.py
+# Open http://localhost:7860
 ```
 
-### Running Tests
+**REST API:**
+```bash
+uvicorn src.api.main:app --reload
+# API docs at http://localhost:8000/docs
+```
+
+**Python API:**
+```python
+from src.workflows.intelligence import MarketIntelligenceWorkflow
+
+workflow = MarketIntelligenceWorkflow()
+result = await workflow.run(
+    company_name="Tesla Model Y",
+    industry="Electric Vehicles"
+)
+print(result["full_report"])
+```
+
+**Docker:**
+```bash
+docker-compose up
+# API: http://localhost:8000
+#  UI: http://localhost:7860
+```
+
+## Model Configuration
+
+Supports 400+ models via OpenRouter. Built-in configurations:
+
+**Free Tier** (testing):
+- `x-ai/grok-4.1-fast:free` - Default, $0.00
+- `meta-llama/llama-3.3-70b-instruct:free` - Alternative
+
+**Production**:
+- `anthropic/claude-sonnet-4.5` - Best reasoning
+- `google/gemini-2.5-flash-lite` - Fast, cost-effective
+- `openai/gpt-5-mini` - Balanced performance
+
+Configure in `.env`:
+```bash
+DEFAULT_MODEL=x-ai/grok-4.1-fast:free
+MAX_COST_PER_RUN=2.0
+```
+
+## Cost Economics
+
+| Approach | Time | Cost | Quality |
+|----------|------|------|---------|
+| Manual Research | 20 hours | $3,000 | Variable |
+| This System | 15 minutes | $0.50-$2 | Consistent |
+| **Improvement** | **80x faster** | **1500-6000x cheaper** | **Standardized** |
+
+Typical per-analysis costs:
+- Free tier (Grok): $0.00
+- Development (GPT-5 Mini): $0.10-$0.50
+- Production (Claude 4.5): $1.00-$2.00
+
+## Testing
 
 ```bash
 # Run all tests
 pytest tests/ -v
 
-# Run with coverage
-pytest tests/ -v --cov=src --cov-report=html
+# With coverage
+pytest tests/ --cov=src --cov-report=html
 
-# Run specific test suite
+# Unit tests only
 pytest tests/unit/ -v
 ```
 
-## Usage
+Current coverage: 29 unit tests + 4 integration tests, all passing.
 
-### Command Line Interface
-
-```bash
-python src/cli.py analyze "Tesla Model Y"
-```
-
-### Python API
-
-```python
-from src.workflows.intelligence import MarketIntelligenceWorkflow
-
-workflow = MarketIntelligenceWorkflow()
-result = workflow.run(
-    company_name="Tesla Model Y",
-    industry="Electric Vehicles"
-)
-
-print(result["final_report"])
-```
-
-### Web Interface
-
-```bash
-python src/ui/app.py
-# Opens Gradio interface at http://localhost:7860
-```
-
-## Model Configuration
-
-The system supports multiple LLM providers via OpenRouter:
-
-**Free Tier** (for development):
-- `x-ai/grok-4.1-fast:free` - Default, no cost
-- `meta-llama/llama-3.3-70b-instruct:free` - Alternative free option
-
-**Production Models**:
-- `anthropic/claude-sonnet-4.5` - Best for code and reasoning ($3/$15 per 1M tokens)
-- `google/gemini-3-pro-preview` - Enterprise-grade ($2/$12 per 1M tokens)
-- `openai/gpt-5` - Latest OpenAI model ($1.25/$10 per 1M tokens)
-
-Change model in `.env`:
-```bash
-DEFAULT_MODEL=anthropic/claude-sonnet-4.5  # For production
-```
-
-## Cost Management
-
-Built-in cost tracking and budget enforcement:
-
-```python
-from src.utils.cost_tracker import CostTracker
-
-tracker = CostTracker()
-# Automatically tracks all LLM calls
-# Enforces budget limits (default: $2 per run)
-# Provides detailed cost summaries
-```
-
-Typical costs per analysis:
-- Free tier: $0.00
-- Development (GPT-5-mini): $0.10-0.50
-- Production (Claude 4.5): $1-2
-
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
 agentic-research-orchestrator/
 ├── src/
-│   ├── agents/          # Agent implementations
-│   ├── workflows/       # LangGraph workflows
-│   ├── tools/           # Search and utility tools
-│   ├── utils/           # Configuration, logging, cost tracking
-│   ├── api/             # FastAPI backend
-│   └── ui/              # Gradio interface
+│   ├── agents/              # Research, Analysis, Writer agents
+│   ├── workflows/           # LangGraph state and orchestration
+│   ├── tools/               # Tavily search wrapper
+│   ├── utils/               # Config, logging, cost tracking
+│   ├── api/                 # FastAPI REST endpoints
+│   └── ui/                  # Gradio interface
 ├── tests/
-│   ├── unit/            # Unit tests
-│   ├── integration/     # Integration tests
-│   └── e2e/             # End-to-end tests
-├── docs/                # Documentation
-└── requirements.txt     # Python dependencies
+│   ├── unit/                # Unit tests
+│   └── integration/         # Integration tests
+├── docs/                    # Documentation
+├── scripts/                 # Utility scripts
+├── Dockerfile               # Container configuration
+└── docker-compose.yml       # Multi-service deployment
 ```
 
-### Code Quality
+## Production Features
 
-```bash
-# Format code
-ruff format .
+- **Cost Tracking**: Real-time token and cost monitoring with budget enforcement
+- **State Persistence**: SQLite checkpoints for crash recovery
+- **Error Handling**: Graceful degradation with detailed error reporting  
+- **Observability**: LangSmith integration for debugging and performance analysis
+- **Human-in-the-Loop**: Approval workflow before final report delivery
+- **Async Execution**: Background task processing via FastAPI
+- **Health Checks**: API endpoint monitoring
 
-# Lint
-ruff check .
+## API Endpoints
 
-# Type checking
-mypy src/
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/analyze` | POST | Start new analysis |
+| `/status/{run_id}` | GET | Check analysis progress |
+| `/result/{run_id}` | GET | Retrieve completed report |
+| `/history` | GET | List past analyses |
+| `/health` | GET | Health check |
 
-# Run all checks
-./scripts/check.sh
-```
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## Deployment
-
-### Docker
-
-```bash
-docker-compose up -d
-```
-
-### Production Deployment
-
-See [docs/deployment.md](docs/deployment.md) for detailed deployment instructions including:
-- Docker containerization
-- Environment configuration
-- Scaling considerations
-- Monitoring and observability
+Auto-generated documentation available at `/docs` when API is running.
 
 ## Documentation
 
-- [Architecture Documentation](docs/architecture.md) - Technical deep dive
-- [Business Case](docs/business_case.md) - ROI analysis and market fit
-- [API Reference](docs/api.md) - REST API documentation
-- [Deployment Guide](docs/deployment.md) - Production deployment
+- [Workflow Architecture](docs/WORKFLOW.md) - Technical implementation details
+- [API Reference](http://localhost:8000/docs) - Interactive API documentation
+
+## Deployment
+
+**Local Development:**
+```bash
+docker-compose up
+```
+
+**Production Deployment:**
+1. Configure environment variables in `.env`
+2. Build container: `docker build -t market-intelligence .`
+3. Run: `docker run -p 8000:8000 -p 7860:7860 market-intelligence`
+
+For production deployments, configure:
+- Persistent volume for checkpoint storage
+- Reverse proxy (nginx) with SSL
+- Resource limits and auto-scaling
+- Monitoring and alerting
+
+## Limitations
+
+- Requires internet connection for LLM and search APIs
+- Quality depends on availability of public information
+- Free tier models have rate limits
+- Analysis limited to publicly available data
+- English language only (currently)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file.
 
-## Acknowledgments
+## Technical Highlights
 
-- Built with [LangGraph](https://github.com/langchain-ai/langgraph) for multi-agent orchestration
-- Powered by [OpenRouter](https://openrouter.ai) for LLM access
-- Search capabilities via [Tavily API](https://tavily.com)
-- Observability through [LangSmith](https://smith.langchain.com)
+**For Portfolio/Resume:**
+- Multi-agent orchestration with LangGraph
+- Production error handling and state management
+- Cost optimization ($0-$2 vs $3,000 manual)
+- Comprehensive testing (33 tests)
+- Docker deployment with multi-service architecture
+- REST API with async processing
+- Real-time observability integration
 
-## Contact
-
-For questions, issues, or collaboration opportunities, please open an issue on GitHub.
-
-## Roadmap
-
-- [ ] Support for additional data sources (Crunchbase, LinkedIn, etc.)
-- [ ] Multi-language report generation
-- [ ] Real-time competitive monitoring
-- [ ] Custom report templates
-- [ ] API rate limiting and caching
-- [ ] Enterprise authentication and authorization
+**Business Value:**
+- 80x time reduction (20 hours to 15 minutes)
+- 1500-6000x cost reduction ($3,000 to $0.50-$2)
+- Consistent, reproducible results
+- Scales to unlimited analyses
+- No human bottleneck
 
 ---
 
-**Status**: Phase 1 Complete - Foundation implemented with configuration, logging, and cost tracking. Phase 2 in progress - Agent implementation.
+Built by Prateek Kumar Goel | [GitHub](https://github.com/pkgprateek/agentic-research-orchestrator)
