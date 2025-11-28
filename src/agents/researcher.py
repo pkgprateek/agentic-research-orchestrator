@@ -60,7 +60,7 @@ When analyzing search results, you should:
 Provide your analysis in a structured format with clear sections and bullet points.
 Always cite sources when making specific claims."""
 
-    async def run(
+    async def run(  # type: ignore[override]
         self,
         company_name: str,
         industry: Optional[str] = None,
@@ -83,7 +83,7 @@ Always cite sources when making specific claims."""
         """
         logger.info(f"Starting research for: {company_name}")
 
-        results = {
+        results: Dict[str, Any] = {
             "company_name": company_name,
             "industry": industry,
             "company_overview": "",
@@ -99,7 +99,8 @@ Always cite sources when making specific claims."""
                 max_results=10 if research_depth == "comprehensive" else 5,
             )
 
-            results["raw_sources"].extend(company_data.get("results", []))
+            if isinstance(results["raw_sources"], list):
+                results["raw_sources"].extend(company_data.get("results", []))
 
             # Analyze company data with LLM
             company_context = self.search_tool.format_results_for_llm(company_data)
@@ -115,7 +116,8 @@ Always cite sources when making specific claims."""
                 max_results=10 if research_depth == "comprehensive" else 5,
             )
 
-            results["raw_sources"].extend(competitor_data.get("results", []))
+            if isinstance(results["raw_sources"], list):
+                results["raw_sources"].extend(competitor_data.get("results", []))
 
             competitor_context = self.search_tool.format_results_for_llm(
                 competitor_data
@@ -132,7 +134,8 @@ Always cite sources when making specific claims."""
                     max_results=8 if research_depth == "comprehensive" else 4,
                 )
 
-                results["raw_sources"].extend(trend_data.get("results", []))
+                if isinstance(results["raw_sources"], list):
+                    results["raw_sources"].extend(trend_data.get("results", []))
 
                 trend_context = self.search_tool.format_results_for_llm(trend_data)
                 trend_analysis = await self._analyze_trends(industry, trend_context)

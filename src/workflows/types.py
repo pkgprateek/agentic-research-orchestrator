@@ -14,6 +14,7 @@ class IntelligenceState(TypedDict):
     # Input
     company_name: str
     industry: str | None
+    research_depth: str  # "basic" or "comprehensive"
 
     # Research phase outputs
     research_data: dict

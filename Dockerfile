@@ -24,8 +24,11 @@ COPY conftest.py .
 # Create necessary directories
 RUN mkdir -p data logs
 
+# Set python path
+ENV PYTHONPATH=/app
+
 # Expose ports
 EXPOSE 8000 7860
 
 # Default command runs both API and UI
-CMD uvicorn src.api.main:app --host 0.0.0.0 --port 7860 & python src/ui/app.py
+CMD ["python", "src/ui/app.py"]

@@ -65,7 +65,7 @@ Report format guidelines:
 
 Write for senior executives and decision-makers."""
 
-    async def run(
+    async def run(  # type: ignore[override]
         self,
         research_data: Dict[str, Any],
         analysis_data: Dict[str, Any],

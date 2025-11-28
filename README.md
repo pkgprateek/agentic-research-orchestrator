@@ -73,7 +73,8 @@ graph LR
     ```bash
     python -m venv venv
     source venv/bin/activate
-    pip install uv && uv pip install -r requirements.txt
+    pip install -e .  # Installs project in editable mode (Professional)
+    # Or: pip install -r requirements.txt (Legacy)
     ```
 
 3.  **Configure credentials:**
@@ -84,10 +85,10 @@ graph LR
 
 4.  **Run the application:**
     ```bash
-    # Run both API and UI
+    # Run
     python src/ui/app.py
+    # Open http://localhost:7860
     ```
-    Access the UI at `http://localhost:7860`.
 
 ### Docker Deployment
 
@@ -99,10 +100,22 @@ docker-compose up --build
 
 This project maintains high code quality standards with comprehensive testing and linting.
 
-*   **Unit Tests:** `pytest tests/unit/`
-*   **Integration Tests:** `pytest tests/integration/`
-*   **Linting:** `ruff check src/ tests/`
-*   **Type Checking:** `mypy src/`
+## Testing
+
+Run the full test suite (Linting, Type Checking, Unit & Integration Tests):
+
+```bash
+./scripts/run_all_tests.sh
+```
+
+Or run individually:
+
+```bash
+ruff check src/ tests/       # Linting
+mypy src/                    # Type Checking
+pytest tests/unit/ -v        # Unit Tests
+pytest tests/integration/ -v # Integration Tests
+```
 
 ## 📊 Performance Metrics
 

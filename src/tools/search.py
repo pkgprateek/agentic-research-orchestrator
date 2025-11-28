@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Optional
 
-from tavily import TavilyClient
+from tavily import TavilyClient  # type: ignore[import-untyped]
 
 from src.utils.config import get_settings
 from src.utils.logging import setup_logger

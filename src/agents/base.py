@@ -47,8 +47,8 @@ class BaseAgent(ABC):
         self.llm = ChatOpenAI(
             model=self.model_name,
             temperature=temperature,
-            openai_api_key=settings.openrouter_api_key,
-            openai_api_base=settings.openrouter_base_url,
+            openai_api_key=settings.openrouter_api_key,  # type: ignore[call-arg]
+            openai_api_base=settings.openrouter_base_url,  # type: ignore[call-arg]
         )
 
         logger.info(f"Initialized {name} with model {self.model_name}")
@@ -114,7 +114,7 @@ class BaseAgent(ABC):
                 },
             )
 
-            return response.content
+            return str(response.content)
 
         except Exception as e:
             logger.error(f"{self.name} LLM call failed: {e}")
@@ -135,7 +135,7 @@ class BaseAgent(ABC):
         Returns:
             List of messages
         """
-        messages = []
+        messages: list[BaseMessage] = []
 
         # Add system message
         prompt = system_prompt or self.get_system_prompt()

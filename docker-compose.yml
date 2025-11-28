@@ -13,7 +13,7 @@ services:
       - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-false}
       - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-agentic-market-research}
       - DEFAULT_MODEL=${DEFAULT_MODEL:-x-ai/grok-4.1-fast:free}
-      - MAX_COST_PER_RUN=${MAX_COST_PER_RUN:-2.0}
+      - MAX_COST_PER_RUN=${MAX_COST_PER_RUN:2.0}
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs

@@ -62,7 +62,7 @@ Your analysis should be:
 
 Use bullet points, clear headings, and strategic language."""
 
-    async def run(
+    async def run(  # type: ignore[override]
         self,
         research_data: Dict[str, Any],
     ) -> Dict[str, Any]:

@@ -1,6 +1,7 @@
 """Integration tests for workflow error handling and cost limits."""
 
 import pytest
+from unittest.mock import AsyncMock
 
 from src.workflows.market_analysis import MarketIntelligenceWorkflow
 
@@ -14,15 +15,14 @@ class TestWorkflowErrorRecovery:
         workflow = MarketIntelligenceWorkflow()
 
         # Mock research to fail
-        async def mock_research_error(state):
-            return {
-                "errors": ["Research API failed"],
-                "current_agent": "research",
-            }
+        # Mock research to fail
+        workflow.research_agent.run = AsyncMock(
+            side_effect=Exception("Research API failed")
+        )
 
-        workflow._research_node = mock_research_error
-
-        result = await workflow.run(company_name="Test Co", thread_id="test-error-1")
+        result = await workflow.run(
+            company_name="Test Company", thread_id="test-error-1"
+        )
 
         assert len(result["errors"]) > 0
         assert result["current_agent"] == "research"
@@ -32,20 +32,21 @@ class TestWorkflowErrorRecovery:
         workflow = MarketIntelligenceWorkflow(max_budget=0.001)
 
         # Mock research to succeed with some cost
-        async def mock_research_success(state):
+        # Mock research to succeed with some cost
+        async def mock_run(*args, **kwargs):
             workflow.cost_tracker.track_usage("openai/gpt-5-mini", 10000, 5000)
             return {
-                "current_agent": "research",
-                "research_data": {"some": "data"},
+                "company_name": "Mock Company",
                 "competitors": [],
                 "market_trends": {},
                 "raw_sources": [],
-                "iteration": 1,
             }
 
-        workflow._research_node = mock_research_success
+        workflow.research_agent.run = AsyncMock(side_effect=mock_run)
 
-        result = await workflow.run(company_name="Test Co", thread_id="test-budget-1")
+        result = await workflow.run(
+            company_name="Test Company", thread_id="test-budget-1"
+        )
 
         # Should have errors about budget
         assert len(result.get("errors", [])) > 0 or result["total_cost"] < 0.001
@@ -60,41 +61,35 @@ class TestWorkflowIntegration:
         workflow = MarketIntelligenceWorkflow()
 
         # Mock all agents
-        async def mock_research(state):
-            return {
-                "current_agent": "research",
-                "research_data": {"company": "Test Co"},
+        # Mock all agents
+        workflow.research_agent.run = AsyncMock(
+            return_value={
+                "company_name": "Test Company",
                 "competitors": [{"name": "Competitor A"}],
                 "market_trends": {"trend": "growing"},
                 "raw_sources": [{"url": "test.com"}],
-                "iteration": state.get("iteration", 0) + 1,
             }
+        )
 
-        async def mock_analysis(state):
-            return {
-                "current_agent": "analysis",
+        workflow.analysis_agent.run = AsyncMock(
+            return_value={
                 "swot": {"strengths": ["good"]},
                 "competitive_matrix": {},
                 "positioning": {},
                 "strategic_recommendations": {},
             }
+        )
 
-        async def mock_writing(state):
-            return {
-                "current_agent": "writing",
+        workflow.writer_agent.run = AsyncMock(
+            return_value={
                 "executive_summary": "Test summary",
                 "full_report": "# Test Report",
-                "report_metadata": {},
-                "total_cost": 0.0,
-                "total_tokens": 0,
+                "metadata": {},
             }
-
-        workflow._research_node = mock_research
-        workflow._analysis_node = mock_analysis
-        workflow._writing_node = mock_writing
+        )
 
         result = await workflow.run(
-            company_name="Test Co", thread_id="test-integration-1"
+            company_name="Test Company", thread_id="test-integration-1"
         )
 
         assert result["approved"] is True

@@ -159,8 +159,10 @@ async def get_status(run_id: str):
         "completed": 1.0,
     }
 
-    current_agent = analysis.get("current_agent")
-    progress = progress_map.get(current_agent, 0.0)
+    current_agent = (
+        str(analysis.get("current_agent")) if analysis.get("current_agent") else None
+    )
+    progress = progress_map.get(current_agent, 0.0) if current_agent else 0.0
     if analysis["status"] == "completed":
         progress = 1.0
 

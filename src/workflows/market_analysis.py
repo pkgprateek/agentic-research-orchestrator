@@ -26,7 +26,10 @@ class MarketIntelligenceWorkflow:
     """
 
     def __init__(
-        self, checkpoint_path: str = "./checkpoints.db", max_budget: float = 2.0
+        self,
+        checkpoint_path: str = "./checkpoints.db",
+        max_budget: float = 2.0,
+        model_name: str | None = None,
     ):
         """
         Initialize workflow.
@@ -34,15 +37,23 @@ class MarketIntelligenceWorkflow:
         Args:
             checkpoint_path: Path to SQLite checkpoint database
             max_budget: Maximum cost per run in USD
+            model_name: Name of the LLM model to use
         """
         self.max_budget = max_budget
         self.cost_tracker = CostTracker()
         self.checkpoint_path = checkpoint_path
+        self.model_name = model_name
 
         # Initialize agents (shared cost tracker)
-        self.research_agent = ResearchAgent(cost_tracker=self.cost_tracker)
-        self.analysis_agent = AnalysisAgent(cost_tracker=self.cost_tracker)
-        self.writer_agent = WriterAgent(cost_tracker=self.cost_tracker)
+        self.research_agent = ResearchAgent(
+            cost_tracker=self.cost_tracker, model=model_name
+        )
+        self.analysis_agent = AnalysisAgent(
+            cost_tracker=self.cost_tracker, model=model_name
+        )
+        self.writer_agent = WriterAgent(
+            cost_tracker=self.cost_tracker, model=model_name
+        )
 
         # Build workflow graph blueprint
         self.graph_builder = self._build_graph()
@@ -90,7 +101,7 @@ class MarketIntelligenceWorkflow:
             research_results = await self.research_agent.run(
                 company_name=state["company_name"],
                 industry=state.get("industry"),
-                research_depth="comprehensive",
+                research_depth=state.get("research_depth", "comprehensive"),
             )
 
             # Update state
@@ -234,6 +245,7 @@ class MarketIntelligenceWorkflow:
         company_name: str,
         industry: str | None = None,
         thread_id: str | None = None,
+        research_depth: str = "comprehensive",
     ) -> dict:
         """
         Run the complete workflow.
@@ -249,9 +261,10 @@ class MarketIntelligenceWorkflow:
         logger.info(f"Starting workflow for: {company_name}")
 
         # Initial state
-        initial_state = {
+        initial_state: IntelligenceState = {
             "company_name": company_name,
             "industry": industry,
+            "research_depth": research_depth,
             "research_data": {},
             "competitors": [],
             "market_trends": {},
@@ -281,7 +294,7 @@ class MarketIntelligenceWorkflow:
                 self.checkpoint_path
             ) as checkpointer:
                 workflow = self.graph_builder.compile(checkpointer=checkpointer)
-                final_state = await workflow.ainvoke(initial_state, config)
+                final_state = await workflow.ainvoke(initial_state, config)  # type: ignore[arg-type]
 
             logger.info(f"Workflow complete. Cost: ${final_state['total_cost']:.4f}")
             return final_state

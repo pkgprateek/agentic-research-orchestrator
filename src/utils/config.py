@@ -63,7 +63,7 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     """Get settings instance (lazy-loaded)."""
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
 
 
 # For convenience, but use get_settings() in tests
