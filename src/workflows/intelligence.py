@@ -79,7 +79,7 @@ class MarketIntelligenceWorkflow:
             {"approved": END, "revise": "research", "max_revisions": END},
         )
 
-        # Compile with checkpointer
+        # Compile with SQLite checkpointing for production persistence
         checkpointer = SqliteSaver.from_conn_string(self.checkpoint_path)
         return graph.compile(checkpointer=checkpointer)
 
