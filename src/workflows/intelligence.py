@@ -1,7 +1,7 @@
 """Main LangGraph workflow for market intelligence."""
 
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from src.workflows.state import IntelligenceState
 from src.agents.researcher import ResearchAgent
@@ -79,9 +79,9 @@ class MarketIntelligenceWorkflow:
             {"approved": END, "revise": "research", "max_revisions": END},
         )
 
-        # Compile with SQLite checkpointing for production persistence
-        checkpointer = SqliteSaver.from_conn_string(self.checkpoint_path)
-        return graph.compile(checkpointer=checkpointer)
+        # Compile with async SQLite checkpointing
+        with AsyncSqliteSaver.from_conn_string(self.checkpoint_path) as checkpointer:
+            return graph.compile(checkpointer=checkpointer)
 
     async def _research_node(self, state: IntelligenceState) -> dict:
         """Research agent node."""
