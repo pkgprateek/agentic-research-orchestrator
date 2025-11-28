@@ -177,6 +177,6 @@ def _custom_routing(self, state):
 - [x] State persistence with checkpoints
 - [x] Error recovery and graceful degradation
 - [x] Observability integration
-- [ ] Human-in-the-loop UI integration (Phase 5)
+- [ ] Human-in-the-loop UI integration
 - [ ] Rate limiting for API calls
 - [ ] Result caching for repeated queries

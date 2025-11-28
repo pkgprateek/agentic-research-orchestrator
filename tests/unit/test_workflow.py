@@ -1,6 +1,7 @@
 """Unit tests for LangGraph workflow state and nodes."""
 
 import pytest
+from unittest.mock import AsyncMock
 
 from src.workflows.types import IntelligenceState
 from src.workflows.market_analysis import MarketIntelligenceWorkflow
@@ -145,14 +146,23 @@ class TestWorkflowNodes:
         """Test research node returns correct state structure."""
         workflow = MarketIntelligenceWorkflow()
 
+        # Mock the research agent's run method
+        workflow.research_agent.run = AsyncMock(
+            return_value={
+                "company_name": "Test Company",
+                "company_overview": "Overview",
+                "competitors": "Competitors",
+                "market_trends": "Trends",
+                "raw_sources": [],
+            }
+        )
+
         state = {
             "company_name": "Test Company",
             "industry": "Technology",
             "iteration": 0,
         }
 
-        # This will make real API calls, so we just test structure
-        # In a real test, we'd mock the agents
         result = await workflow._research_node(state)
 
         assert "current_agent" in result

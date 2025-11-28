@@ -24,6 +24,7 @@ def test_settings_with_defaults(monkeypatch):
     """Test settings use defaults for optional fields."""
     monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
     monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.delenv("LANGCHAIN_PROJECT", raising=False)
 
     settings = Settings()
 
