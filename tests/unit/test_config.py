@@ -35,9 +35,14 @@ def test_settings_with_defaults(monkeypatch):
 
 def test_settings_with_missing_keys():
     """Test settings when some keys are missing (should use defaults)."""
-    with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test"}, clear=True):
+    with patch.dict(
+        os.environ,
+        {"OPENROUTER_API_KEY": "test", "TAVILY_API_KEY": "test-tavily"},
+        clear=True,
+    ):
         settings = Settings()
         assert settings.openrouter_api_key == "test"
+        assert settings.tavily_api_key == "test-tavily"
         assert (
             settings.default_model == "x-ai/grok-4.1-fast:free"
         )  # Falls back to default
