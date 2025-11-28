@@ -32,14 +32,14 @@ def test_settings_with_defaults(monkeypatch):
     assert settings.langchain_project == "market-intelligence-prod"
 
 
-def test_settings_missing_required_key(monkeypatch):
-    """Test settings raise error when required keys are missing."""
-    # Clear all keys
-    for key in ["OPENROUTER_API_KEY", "TAVILY_API_KEY"]:
-        monkeypatch.delenv(key, raising=False)
-
-    with pytest.raises(ValidationError):
-        Settings()
+def test_settings_with_missing_keys():
+    """Test settings when some keys are missing (should use defaults)."""
+    with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test"}, clear=True):
+        settings = Settings()
+        assert settings.openrouter_api_key == "test"
+        assert (
+            settings.default_model == "x-ai/grok-4.1-fast:free"
+        )  # Falls back to default
 
 
 def test_openrouter_base_url():

@@ -1,212 +1,162 @@
-# LangGraph Workflow Documentation
+# LangGraph Workflow Architecture
 
-## Overview
+Technical documentation for the multi-agent orchestration system.
 
-The Market Intelligence workflow orchestrates three specialized agents using LangGraph's StateGraph to generate comprehensive market analysis reports.
-
-## Architecture
+## System Architecture
 
 ```
-START → Research → Analysis → Writing → Human Review → END
-          ↓          ↓          ↓
-       Tavily    SWOT/Matrix  Report
+User Input → Research Agent → Analysis Agent → Writer Agent → Report
+                ↓                ↓                ↓
+            Tavily API       SWOT/Matrix      Markdown
 ```
 
-### State Management
+**State Flow:** LangGraph StateGraph manages shared state across agents with SQLite checkpointing for crash recovery.
 
-The workflow maintains a shared state (`IntelligenceState`) that flows between agents:
+## Agent Responsibilities
 
-```python
-{
-    "company_name": str,
-    "industry": str | None,
-    "research_data": dict,      # From Research Agent
-    "swot": dict,                # From Analysis Agent  
-    "full_report": str,          # From Writer Agent
-    "total_cost": float,         # Cost tracking
-    "approved": bool,            # Human approval
-    # ... additional fields
-}
-```
-
-## Workflow Nodes
-
-### 1. Research Node
-- **Input**: Company name, industry
-- **Process**: Tavily search queries (company info, competitors, trends)
-- **Output**: Research data, competitors list, market trends
-- **Errors**: Network failures, API limits
-
-### 2. Analysis Node
-- **Input**: Research data
-- **Process**: LLM-powered SWOT, competitive positioning
-- **Output**: Structured analysis (SWOT, matrix, recommendations)
-- **Budget Check**: Enforces max cost before expensive analysis
-
-### 3. Writing Node
-- **Input**: Research + Analysis data
-- **Process**: Generate executive summary and full markdown report
-- **Output**: Professional business intelligence report
-
-### 4. Human Review Node
-- **Input**: Generated report
-- **Process**: Approval gate (currently auto-approves)
-- **Output**: Approval decision or revision request
+| Agent | Input | Output | External Calls |
+|-------|-------|--------|----------------|
+| Research | Company name, industry | Competitors, market data, sources | Tavily API (3 queries) |
+| Analysis | Research data | SWOT, competitive matrix, recommendations | LLM (4-6 calls) |
+| Writer | Research + Analysis | Executive summary, full report | LLM (2-3 calls) |
 
 ## Conditional Routing
 
-### Research → Analysis
+**Research → Analysis:**
+- If errors or no data: END
+- Else: Continue to Analysis
+
+**Human Review → END/Revision:**
+- If approved: END
+- If max revisions (2): END
+- If feedback provided: Loop to Research
+
+## State Schema
+
 ```python
-if errors or no_data:
-    END  # Stop workflow
-else:
-    CONTINUE to Analysis
+IntelligenceState = {
+    "company_name": str,
+    "industry": str | None,
+    "research_data": dict,
+    "swot": dict,
+    "full_report": str,
+    "current_agent": str,
+    "total_cost": float,
+    "approved": bool,
+    "errors": list,
+    # ... 15 more fields
+}
 ```
 
-### Human Review → END/Revision
-```python
-if approved:
-    END  # Complete
-elif max_revisions_reached:
-    END  # Give up
-else:
-    REVISE  # Loop back to Research
-```
+Full schema: `src/workflows/state.py`
 
 ## Cost Management
 
-Budget is enforced at multiple points:
-- Before Analysis Node (most expensive)
-- After each LLM call via CostTracker
-- Workflow fails with BudgetExceededError if limit hit
+Budget enforcement at 3 points:
+1. Before Analysis node (most expensive)
+2. After each LLM call via CostTracker
+3. Workflow raises `BudgetExceededError` if exceeded
 
 Default: $2.00 per run
 
 ## Checkpointing
 
-SQLite checkpoints enable:
-- **Resume**: Continue after crashes
-- **Audit**: Full execution history
-- **Debug**: Inspect state at each step
+SQLite checkpoints (`./checkpoints.db`) enable:
+- Resume after crashes
+- Audit trail for compliance
+- Debug state at each step
 
-Checkpoint file: `./checkpoints.db`
+```python
+# Resume from checkpoint
+workflow = MarketIntelligenceWorkflow()
+result = await workflow.run(
+    company_name="Tesla",
+    thread_id="tesla-analysis-1"  # Same ID = resume
+)
+```
 
 ## Error Handling
 
-Errors accumulate in `state["errors"]` list:
-- Research failures → Workflow stops
-- Analysis errors → Logged, workflow may continue
+Errors accumulate in `state["errors"]`:
+- Research failure → Workflow stops
+- Analysis error → Logged, may continue
 - Budget exceeded → Immediate stop
 
-## Usage Examples
+## Usage
 
-### Basic Usage
-
+**Basic:**
 ```python
 from src.workflows.intelligence import MarketIntelligenceWorkflow
 
 workflow = MarketIntelligenceWorkflow()
-
 result = await workflow.run(
     company_name="Tesla Model Y",
     industry="Electric Vehicles"
 )
-
-print(result["full_report"])
-print(f"Cost: ${result['total_cost']:.2f}")
 ```
 
-### Custom Budget
-
+**Custom Budget:**
 ```python
 workflow = MarketIntelligenceWorkflow(max_budget=5.0)
-
-result = await workflow.run(
-    company_name="Notion",
-    thread_id="notion-analysis-1"  # For checkpointing
-)
 ```
 
-### Resume from Checkpoint
-
-```python
-# If workflow crashed, resume using same thread_id
-result = await workflow.run(
-    company_name="Notion",
-    thread_id="notion-analysis-1"  # Same ID resumes
-)
-```
-
-## Performance
+## Performance Metrics
 
 Typical execution:
-- **Time**: 3-5 minutes  
-- **Cost**: $0.00 (free Grok) to $1.50 (Claude 4.5)
-- **API Calls**: 6-8 LLM calls, 3 search queries
-- **Tokens**: 50K-100K total
+- **Time:** 3-5 minutes
+- **Cost:** $0 (free) to $1.50 (Claude)
+- **API Calls:** 9-14 total (3 search + 6-11 LLM)
+- **Tokens:** 50K-100K
 
 ## Configuration
 
-Via `.env`:
+Environment variables (`.env`):
 ```bash
-DEFAULT_MODEL=x-ai/grok-4.1-fast:free  # Free tier
+DEFAULT_MODEL=x-ai/grok-4.1-fast:free
 MAX_COST_PER_RUN=2.0
-LANGCHAIN_TRACING_V2=true  # Enable LangSmith
+LANGCHAIN_TRACING_V2=true
 ```
 
 ## Observability
 
-With LangSmith enabled:
-- View full execution trace
-- Debug agent decisions
-- Optimize prompts
-- Track costs per call
+LangSmith integration provides:
+- Full execution traces
+- Agent decision debugging
+- Cost tracking per call
+- Performance bottleneck identification
+
+Enable: Set `LANGCHAIN_TRACING_V2=true` in `.env`
 
 Dashboard: https://smith.langchain.com
-
-## Production Considerations
-
-1. **Checkpointing**: Essential for long-running workflows
-2. **Cost Limits**: Prevent runaway LLM costs
-3. **Error Recovery**: Graceful degradation
-4. **Human Review**: Required for high-stakes decisions
-5. **Observability**: Critical for debugging production issues
 
 ## Testing
 
 ```bash
-# Unit tests
-pytest tests/unit/test_workflow.py -v
-
-# Integration tests  
-pytest tests/integration/test_workflow_integration.py -v
-
-# End-to-end (uses real APIs)
-python scripts/test_workflow.py
+pytest tests/unit/test_workflow.py -v        # 11 workflow tests
+pytest tests/integration/ -v                  # Integration tests
+python scripts/test_workflow.py              # E2E with real APIs
 ```
 
-## Extending
+## Extending the Workflow
 
-### Add New Agent Node
+**Add New Agent:**
 
-1. Create agent class in `src/agents/`
-2. Add node wrapper in workflow:
-   ```python
-   async def _my_agent_node(self, state):
-       result = await self.my_agent.run(state["research_data"])
-       return {"my_output": result}
-   ```
-3. Add to graph:
-   ```python
-   graph.add_node("my_agent", self._my_agent_node)
-   graph.add_edge("analysis", "my_agent")
-   ```
-
-### Modify Routing Logic
-
-Update conditional functions:
+1. Create agent in `src/agents/new_agent.py`
+2. Add node wrapper:
 ```python
-def _should_use_special_analysis(self, state):
+async def _new_agent_node(self, state):
+    result = await self.new_agent.run(state["research_data"])
+    return {"new_field": result}
+```
+3. Wire into graph:
+```python
+graph.add_node("new_agent", self._new_agent_node)
+graph.add_edge("analysis", "new_agent")
+```
+
+**Modify Routing:**
+```python
+def _custom_routing(self, state):
     if state["company_name"].startswith("Enterprise"):
         return "deep_analysis"
     return "standard_analysis"
@@ -214,18 +164,19 @@ def _should_use_special_analysis(self, state):
 
 ## Troubleshooting
 
-**Workflow stops early**:  
-- Check `result["errors"]` for failures  
-- Verify API keys in `.env`
+| Issue | Solution |
+|-------|----------|
+| Workflow stops early | Check `result["errors"]`, verify API keys |
+| Budget exceeded | Increase `max_budget` or use cheaper model |
+| Slow performance | Check LangSmith traces, consider caching |
+| Checkpoint errors | Delete `checkpoints.db`, check permissions |
 
-**Budget exceeded frequently**:  
-- Increase `max_budget` parameter  
-- Use cheaper models (grok-4.1-fast:free)
+## Production Checklist
 
-**Slow performance**:  
-- Check LangSmith traces for bottlenecks  
-- Consider caching search results
-
-**Checkpoint errors**:  
-- Delete `checkpoints.db` to reset  
-- Check file permissions
+- [x] Cost tracking and budget enforcement
+- [x] State persistence with checkpoints
+- [x] Error recovery and graceful degradation
+- [x] Observability integration
+- [ ] Human-in-the-loop UI integration (Phase 5)
+- [ ] Rate limiting for API calls
+- [ ] Result caching for repeated queries
